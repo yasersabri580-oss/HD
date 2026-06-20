@@ -1,0 +1,49 @@
+/* ── Technology section: vertical layout with auto carousel ── */
+.tech-main {
+  aspect-ratio: auto;          /* let content decide height */
+}
+
+.tech-image-grid {
+  display: grid;
+  grid-template-columns: 1fr;   /* single column = vertical */
+  gap: 14px;
+}
+
+.tech-slot {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  background: var(--surface-strong);
+}
+
+.tech-slot img {
+  display: block;
+  width: 100%;
+  height: auto;                /* allow natural aspect ratio */
+  object-fit: cover;
+}
+
+/* Optional: make all slots the same height for uniformity */
+.tech-slot-top,
+.tech-slot-center,
+.tech-slot-bottom {
+  aspect-ratio: 16 / 10;       /* or any consistent ratio you prefer */
+}
+
+/* ── Carousel (centre slot) ── */
+.tech-carousel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* The image inside the carousel fills the slot */
+.tech-carousel .media-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Optional subtle fade or slide effect (current image always visible) */

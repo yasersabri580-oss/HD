@@ -1,0 +1,157 @@
+/* =============================================
+   Footer — Mobile‑first responsive
+   ============================================= */
+
+.footer {
+  border-top: 1px solid var(--line);
+  background: linear-gradient(
+    180deg,
+    rgba(244, 249, 253, 0.82),
+    rgba(235, 243, 250, 0.82)
+  );
+  padding: 28px 0 46px;
+}
+
+html.dark .footer {
+  background: linear-gradient(
+    180deg,
+    rgba(9, 24, 40, 0.84),
+    rgba(7, 18, 32, 0.84)
+  );
+}
+
+/* ----- Grid: default is column (mobile) ----- */
+.footer-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 28px;                 /* comfortable spacing between sections */
+}
+
+/* Brand / copy block */
+.footer-grid > div:first-child {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.footer strong {
+  color: var(--blue-deep);
+}
+
+.footer small {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin-top: 4px;
+}
+
+.footer p {
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+
+/* ----- Quick links (and LanguageSwitch) ----- */
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
+}
+
+.footer-links a {
+  color: var(--muted);
+  font-size: 0.93rem;
+  transition: color 0.3s ease;
+}
+
+.footer-links a:hover {
+  color: var(--blue-deep);
+}
+
+/* LanguageSwitch inside the links row – keep it aligned */
+.footer-links .lang-switch {
+  margin: 0;               /* no extra margins */
+}
+
+/* ----- Social icons ----- */
+.footer-social {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0;            /* reset if needed */
+}
+
+.social-icon-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+.social-icon-link:hover {
+  color: var(--blue);
+  border-color: var(--blue);
+  background: rgba(15, 78, 130, 0.08);
+}
+
+.social-icon-link svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* =============================================
+   Tablet / Desktop – switch to row layout
+   ============================================= */
+@media (min-width: 761px) {
+  .footer-grid {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+    gap: 16px;
+  }
+
+  .footer-grid > div:first-child {
+    align-items: flex-start;
+  }
+
+  .footer-links {
+    justify-content: flex-end;
+  }
+
+  .footer-social {
+    justify-content: flex-end;
+  }
+}
+
+/* Optional: slightly tighter padding on very small phones */
+@media (max-width: 480px) {
+  .footer {
+    padding: 20px 0 36px;
+  }
+
+  .footer-grid {
+    gap: 22px;
+  }
+
+  .footer-links {
+    gap: 10px;
+  }
+
+  .social-icon-link {
+    width: 36px;
+    height: 36px;
+  }
+
+  .social-icon-link svg {
+    width: 18px;
+    height: 18px;
+  }
+}

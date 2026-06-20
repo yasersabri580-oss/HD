@@ -1,0 +1,46 @@
+
+/* =============================================
+   Articles Section – Mobile‑first overrides
+   ============================================= */
+
+/* Stack articles grid into a single column on tablets/mobiles */
+@media (max-width: 760px) {
+  .articles-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Adjust featured article spacing for smaller screens */
+  .featured-article {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  /* Reduce inner card padding to avoid text feeling trapped */
+  .article-card {
+    padding: 12px;
+  }
+
+  .article-card-copy {
+    padding: 12px;
+  }
+}
+
+/* Extra refinement for very small phones */
+@media (max-width: 480px) {
+  .featured-article {
+    padding: 10px;
+  }
+
+  .article-card {
+    padding: 10px;
+  }
+
+  .article-card-copy {
+    padding: 10px;
+  }
+
+  .featured-media,
+  .article-card-media {
+    min-height: 220px;   /* keep images visible but compact */
+  }
+}

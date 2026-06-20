@@ -1,0 +1,53 @@
+/* =============================================
+   Hero Section – Responsive Image Swap
+   ============================================= */
+
+/* --- Default: Show desktop hero image, hide mobile portrait --- */
+.hero-media {
+  display: block;          /* visible on desktop */
+}
+
+.hero-mobile-profile {
+  display: none;           /* hidden on desktop (already set) */
+}
+
+/* --- Mobile (≤ 760px): Swap visibility --- */
+@media (max-width: 760px) {
+  .hero-media {
+    display: none;         /* hide the large hero image */
+  }
+
+  .hero-mobile-profile {
+    display: block;        /* show the doctor portrait */
+    position: relative;    /* so Image fill works properly */
+    width: 100%;
+    aspect-ratio: 1 / 1;  /* optional: gives a nice square container */
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: var(--shadow-strong);
+    margin-bottom: 24px;   /* space before the CTA buttons */
+  }
+
+  /* Keep the image inside responsive */
+  .hero-mobile-profile img {
+    object-fit: cover;
+  }
+}
+
+
+/* =============================================
+   Hero – Hide all images on mobile
+   ============================================= */
+
+@media (max-width: 760px) {
+  /* Remove the main hero image */
+  .hero-media {
+    display: none;
+  }
+
+  /* Ensure the doctor portrait remains hidden
+     (it already is by default, but this is a safety net) */
+  .hero-mobile-profile {
+    display: none;
+  }
+}
