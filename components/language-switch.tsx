@@ -1,11 +1,13 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useLocale } from '../components/language-provider'
-import { persistLocale, type Locale } from '../lib/l10n'
+import { buildLocalizedHref, persistLocale, type Locale } from '../lib/l10n'
 
 export function LanguageSwitch() {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const { locale, setLocale } = useLocale()
 
   const switchLanguage = (nextLocale: Locale) => {
@@ -14,7 +16,12 @@ export function LanguageSwitch() {
     persistLocale(nextLocale)
     setLocale(nextLocale)
 
-    router.refresh()
+    const search = searchParams?.toString()
+      ? `?${searchParams.toString()}`
+      : ''
+    const target = buildLocalizedHref(pathname ?? '/', nextLocale, search)
+
+    router.replace(target, { scroll: false })
   }
 
   return (
