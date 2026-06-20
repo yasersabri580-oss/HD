@@ -6,6 +6,7 @@ import './hero-responsive.css'
 import './technology.css'
 import './qualification.css'
 import './services.css'
+import './doctor-profile.css'
 
 import type { Metadata } from 'next'
 import { cookies } from 'next/headers'
