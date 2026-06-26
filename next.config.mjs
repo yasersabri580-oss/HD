@@ -20,6 +20,12 @@ const nextConfig = {
         port: '',
         pathname: '/storage/v1/object/public/article-covers/**',
       },
+         {
+        protocol: 'https',
+        hostname: 'qtryyswmdsfmukgrxuaq.supabase.co',
+        port: '',
+        pathname: '/**', // matches any path
+      },
     ],
   },
 };

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import type { ReactNode } from 'react'
 import {
   FacebookIcon,
   TwitterIcon,
@@ -29,18 +30,19 @@ interface SocialLink {
 }
 
 interface FooterProps {
-  site?: any               // for brand / subline (optional)
+  site?: any
   footerCopy?: string
   footerCopy_en?: string
   footerCopy_ps?: string
-  quickLinks?: QuickLink[] // if not provided, falls back to siteMeta.quickLinks
+  quickLinks?: QuickLink[]
   socialLinks?: SocialLink[]
 }
 
 // ---- Icon resolver ----
-const socialIconMap: Record<string, React.ReactNode> = {
+const socialIconMap: Record<string, ReactNode> = {
   facebook: <FacebookIcon />,
   twitter: <TwitterIcon />,
+  x: <TwitterIcon />,
   instagram: <InstagramIcon />,
   linkedin: <LinkedInIcon />,
   youtube: <YoutubeIcon />,
@@ -53,7 +55,7 @@ function SocialIcon({ name }: { name: string }) {
   return socialIconMap[key] ?? <WhatsAppIcon />
 }
 
-// ---- Localisation helpers (exactly as in navbar) ----
+// ---- Localisation helpers ----
 function pickLabel(link: QuickLink, locale: string) {
   if (locale === 'en') return link.label_en || link.label_fa || ''
   if (locale === 'ps') return link.label_ps || link.label_fa || ''
@@ -73,18 +75,123 @@ function pickText(fa?: string, en?: string, ps?: string, locale?: string) {
   return fa || en || ps || ''
 }
 
+// ---- Social link normalization ----
+function isExternalUrl(value: string) {
+  return /^https?:\/\//i.test(value) || /^mailto:/i.test(value) || /^tel:/i.test(value)
+}
+
+function safeHttps(value: string) {
+  const trimmed = value.trim()
+  if (!trimmed) return ''
+  if (isExternalUrl(trimmed)) return trimmed
+  if (trimmed.startsWith('//')) return `https:${trimmed}`
+  return `https://${trimmed}`
+}
+
+function onlyDigits(value: string) {
+  return value.replace(/[^\d]/g, '')
+}
+
+function normalizeTelegram(raw: string) {
+  const value = raw.trim()
+
+  // already valid
+  if (/^https?:\/\/(t\.me|telegram\.me)\//i.test(value)) return value
+
+  // @username
+  if (value.startsWith('@')) {
+    return `https://t.me/${value.slice(1)}`
+  }
+
+  // t.me/username or telegram.me/username
+  if (/^(t\.me|telegram\.me)\//i.test(value)) {
+    return `https://${value}`
+  }
+
+  // plain username
+  return `https://t.me/${value.replace(/^\/+/, '')}`
+}
+
+function normalizeWhatsApp(raw: string) {
+  const value = raw.trim()
+
+  // already valid
+  if (/^https?:\/\/(wa\.me|api\.whatsapp\.com)\//i.test(value)) return value
+
+  // wa.me/989...
+  if (value.startsWith('wa.me/')) return `https://${value}`
+  if (value.startsWith('api.whatsapp.com/')) return `https://${value}`
+
+  // phone, +phone, whatsapp:phone, etc.
+  const phone = onlyDigits(value)
+  if (phone) return `https://wa.me/${phone}`
+
+  return ''
+}
+
+function normalizeInstagram(raw: string) {
+  const value = raw.trim()
+  if (/^https?:\/\/(www\.)?instagram\.com\//i.test(value)) return value
+  const handle = value.replace(/^@/, '').replace(/^instagram:/i, '').replace(/^\/+/, '')
+  return `https://www.instagram.com/${handle}/`
+}
+
+function normalizeLinkedIn(raw: string) {
+  const value = raw.trim()
+  if (/^https?:\/\/([a-z]+\.)?linkedin\.com\//i.test(value)) return value
+  const cleaned = value.replace(/^linkedin:/i, '').replace(/^\/+/, '')
+  return `https://www.linkedin.com/in/${cleaned}/`
+}
+
+function normalizeYouTube(raw: string) {
+  const value = raw.trim()
+  if (/^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\//i.test(value)) return value
+  const cleaned = value.replace(/^youtube:/i, '').replace(/^@/, '').replace(/^\/+/, '')
+  return `https://www.youtube.com/@${cleaned}`
+}
+
+function normalizeFacebook(raw: string) {
+  const value = raw.trim()
+  if (/^https?:\/\/(www\.)?facebook\.com\//i.test(value)) return value
+  const cleaned = value.replace(/^facebook:/i, '').replace(/^\/+/, '')
+  return `https://www.facebook.com/${cleaned}`
+}
+
+function normalizeTwitter(raw: string) {
+  const value = raw.trim()
+  if (/^https?:\/\/(www\.)?(x\.com|twitter\.com)\//i.test(value)) return value
+  const cleaned = value.replace(/^@/, '').replace(/^twitter:/i, '').replace(/^x:/i, '').replace(/^\/+/, '')
+  return `https://x.com/${cleaned}`
+}
+
+function normalizeSocialHref(link: SocialLink) {
+  const href = link.href?.trim()
+  if (!href) return ''
+
+  const key = link.iconName.replace(/icon$/i, '').trim().toLowerCase()
+
+  if (key === 'telegram') return normalizeTelegram(href)
+  if (key === 'whatsapp') return normalizeWhatsApp(href)
+  if (key === 'instagram') return normalizeInstagram(href)
+  if (key === 'linkedin') return normalizeLinkedIn(href)
+  if (key === 'youtube') return normalizeYouTube(href)
+  if (key === 'facebook') return normalizeFacebook(href)
+  if (key === 'twitter' || key === 'x') return normalizeTwitter(href)
+
+  return safeHttps(href)
+}
+
 // ---- Footer ----
 export function Footer({
   site,
   footerCopy,
   footerCopy_en,
   footerCopy_ps,
-  quickLinks = siteMeta.quickLinks,  // fallback to the same data as navbar
+  quickLinks = siteMeta.quickLinks,
   socialLinks = [],
 }: FooterProps) {
   const { locale } = useLocale()
 
-  // Brand – same logic as navbar
   const brandFa = site?.brand || siteMeta.brand
   const brandEn = site?.brand_en || siteMeta.brand_en || siteMeta.brand
   const brand = locale === 'en' ? brandEn : brandFa
@@ -93,43 +200,44 @@ export function Footer({
   const sublineEn = site?.brandSubline_en || (siteMeta as any).brandSubline_en || siteMeta.brandSubline
   const subline = locale === 'en' ? sublineEn : sublineFa
 
-  // Footer copy – localized
   const copy = pickText(footerCopy, footerCopy_en, footerCopy_ps, locale)
 
-  // Nav links – exactly as navbar does
   const navLinks = quickLinks.map((link) => ({
     href: link.href,
     label: pickLabel(link, locale),
   }))
 
+  const normalizedSocialLinks = socialLinks
+    .map((s) => ({
+      ...s,
+      href: normalizeSocialHref(s),
+    }))
+    .filter((s) => Boolean(s.href))
+
   return (
     <footer className="footer">
       <div className="container footer-grid">
-        {/* Brand + copy */}
         <div>
           <strong>{brand}</strong>
           {subline && <small>{subline}</small>}
           <p>{copy}</p>
         </div>
 
-        {/* Localised quick links */}
         <div className="footer-links">
           {navLinks.map((link) => (
             <Link key={link.href} href={withLocale(link.href, locale)}>
               {link.label}
             </Link>
           ))}
-          {/* Extra static links (also localised) */}
           <Link href={`/${locale}/articles`}>
             {pickText('آرشیو مقالات', 'Articles', 'مقالې', locale)}
           </Link>
-          <LanguageSwitch />  {/* optional, you can keep or remove */}
+          <LanguageSwitch />
         </div>
 
-        {/* Social links (external, no locale needed) */}
-        {socialLinks.length > 0 && (
+        {normalizedSocialLinks.length > 0 && (
           <div className="footer-social">
-            {socialLinks.map((s) => (
+            {normalizedSocialLinks.map((s) => (
               <a
                 key={s.label}
                 href={s.href}

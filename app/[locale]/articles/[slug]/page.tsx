@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-
+import fallbackArticle from "../../../assets/images/heart-health-foundation.jpg";
 import { fetchArticleBySlug, fetchRelatedArticles } from '@/lib/articles'
 import { getDoctor, getDoctorById } from '@/lib/doctors'
 import { getLocalizedProfile } from '@/lib/profile-fallback'
@@ -92,7 +92,7 @@ export default async function ArticlePage({
   const coverSrc =
     typeof article.cover === 'string'
       ? article.cover
-      : article.cover?.src || '/assets/images/heart-health-foundation.jpg'
+      : article.cover?.src || "https://qtryyswmdsfmukgrxuaq.supabase.co/storage/v1/object/public/article-covers/b58a98b2-5eec-42ea-84a8-3706df8666cf/heart-health-foundation.jpg"
 
   const isEn = locale === 'en'
 

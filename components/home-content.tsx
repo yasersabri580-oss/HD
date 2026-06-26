@@ -32,6 +32,130 @@ import TechImageGallery from "@/components/TechImageGallery";
 // queries by NEXT_PUBLIC_DOCTOR_ID, not by slug.
 const DOCTOR_SLUG = process.env.NEXT_PUBLIC_DOCTOR_SLUG || "mohibullah-ahmadzai";
 
+type SocialLink = {
+  label: string;
+  href: string;
+  iconName: string;
+};
+
+function isValidUrl(url: string) {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function safeHttps(value: string) {
+  const v = value.trim();
+  if (!v) return "";
+
+  if (v.startsWith("//")) return `https:${v}`;
+  if (v.startsWith("http://") || v.startsWith("https://")) return v;
+
+  return `https://${v}`;
+}
+
+function onlyDigits(value: string) {
+  return value.replace(/[^\d]/g, "");
+}
+
+function normalizeTelegram(input: string) {
+  const v = input.trim();
+
+  if (v.startsWith("https://") || v.startsWith("http://")) return v;
+  if (v.startsWith("@")) return `https://t.me/${v.slice(1)}`;
+  if (v.includes("t.me/")) return `https://${v}`;
+
+  return `https://t.me/${v.replace(/^\/+/, "")}`;
+}
+
+function normalizeWhatsApp(input: string) {
+  const v = input.trim();
+
+  if (v.startsWith("https://wa.me/")) return v;
+  if (v.startsWith("http://") || v.startsWith("https://")) return v;
+
+  const digits = onlyDigits(v);
+  if (!digits) return "";
+
+  return `https://wa.me/${digits}`;
+}
+
+function normalizeInstagram(input: string) {
+  const v = input.trim().replace(/^@/, "");
+  if (v.startsWith("http://") || v.startsWith("https://")) return v;
+  return `https://www.instagram.com/${v.replace(/^\/+/, "")}`;
+}
+
+function normalizeLinkedIn(input: string) {
+  const v = input.trim();
+  if (v.startsWith("http://") || v.startsWith("https://")) return v;
+  return `https://www.linkedin.com/in/${v.replace(/^\/+/, "")}`;
+}
+
+function normalizeTwitter(input: string) {
+  const v = input.trim().replace(/^@/, "");
+  if (v.startsWith("http://") || v.startsWith("https://")) return v;
+  return `https://x.com/${v}`;
+}
+
+function normalizeYouTube(input: string) {
+  const v = input.trim();
+  if (v.startsWith("http://") || v.startsWith("https://")) return v;
+  return `https://www.youtube.com/@${v.replace(/^@/, "")}`;
+}
+
+function normalizeFacebook(input: string) {
+  const v = input.trim();
+  if (v.startsWith("http://") || v.startsWith("https://")) return v;
+  return `https://www.facebook.com/${v.replace(/^\/+/, "")}`;
+}
+
+function normalizeSocialLink(link: SocialLink): SocialLink | null {
+  if (!link?.href) return null;
+
+  const key = (link.iconName || "").toLowerCase();
+  let href = link.href.trim();
+
+  switch (key) {
+    case "telegram":
+      href = normalizeTelegram(href);
+      break;
+    case "whatsapp":
+      href = normalizeWhatsApp(href);
+      break;
+    case "instagram":
+      href = normalizeInstagram(href);
+      break;
+    case "linkedin":
+      href = normalizeLinkedIn(href);
+      break;
+    case "twitter":
+    case "x":
+      href = normalizeTwitter(href);
+      break;
+    case "youtube":
+      href = normalizeYouTube(href);
+      break;
+    case "facebook":
+      href = normalizeFacebook(href);
+      break;
+    default:
+      href = safeHttps(href);
+  }
+
+  if (!href || !isValidUrl(href)) return null;
+
+  return {
+    ...link,
+    href,
+  };
+}
+
+// Slug used for the doctor profile deep-link. Any value works because getDoctor()
+// queries by NEXT_PUBLIC_DOCTOR_ID, not by slug.
 const pageCopy = {
   aboutDoctor: {
     fa: "درباره داکتر",
@@ -184,7 +308,7 @@ const pageCopy = {
     ps: "ټیلیفون",
   },
   whatsappLabel: {
-    fa: "واتسپ",
+    fa: "واتساپ",
     en: "WhatsApp",
     ps: "واټساپ",
   },
@@ -285,6 +409,10 @@ export async function HomeContent({ locale }: { locale: Locale }) {
     icon: getServiceIcon(s.iconName || s.icon),
     ...s,
   }));
+
+  const normalizedSocialLinks = ((socialLinks ?? []) as SocialLink[])
+    .map(normalizeSocialLink)
+    .filter(Boolean) as SocialLink[];
 
   return (
     <main className="site-shell">
@@ -779,10 +907,7 @@ export async function HomeContent({ locale }: { locale: Locale }) {
                 {t(pageCopy.appointmentFromWhatsApp, locale)}
                 <WhatsappIcon />
               </a>
-              <a className="button button-secondary" href={`tel:${contact.phoneLink}`}>
-                {t(pageCopy.directCall, locale)}
-                <PhoneIcon />
-              </a>
+           
             </div>
           </div>
           <div className="appointment-media" data-reveal>
@@ -873,7 +998,7 @@ export async function HomeContent({ locale }: { locale: Locale }) {
         site={site}
         footerCopy={site?.footerCopy}
         quickLinks={site.quickLinks}
-        socialLinks={socialLinks}
+        socialLinks={normalizedSocialLinks}
       />
 
       <script

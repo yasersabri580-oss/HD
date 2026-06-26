@@ -31,9 +31,15 @@ import { isLocale, t, type Locale } from "../../../../lib/l10n";
 
 type PageParams = Promise<{ locale: string; slug: string }>;
 
+type SocialLink = {
+  label: string;
+  href: string;
+  iconName: string;
+};
+
 const SPECIALTY = {
   fa: "متخصص داخله قلب (آنژیوگرافی و آنژیوپلاستی)",
-  en: "Cardiologist & Interventional Cardiology Specialist",
+  en: "MD Consultant Interventional Cardiologist (Angiography & Angioplasty)",
   ps: "د زړه داخلي ناروغیو متخصص (انجیوګرافي او انجیوپلاستي)",
 } as const;
 
@@ -127,19 +133,148 @@ const copy = {
 
 function getServiceIcon(iconName: string) {
   switch (iconName) {
-    case "HeartIcon": return <HeartIcon />;
-    case "LabIcon": return <LabIcon />;
-    case "CalendarIcon": return <CalendarIcon />;
-    case "PulseIcon": return <PulseIcon />;
-    case "ShieldIcon": return <ShieldIcon />;
-    case "PhoneIcon": return <PhoneIcon />;
-    default: return <HeartIcon />;
+    case "HeartIcon":
+      return <HeartIcon />;
+    case "LabIcon":
+      return <LabIcon />;
+    case "CalendarIcon":
+      return <CalendarIcon />;
+    case "PulseIcon":
+      return <PulseIcon />;
+    case "ShieldIcon":
+      return <ShieldIcon />;
+    case "PhoneIcon":
+      return <PhoneIcon />;
+    default:
+      return <HeartIcon />;
   }
+}
+
+// ── Social link normalization ────────────────────────────────────────────────
+
+function isValidUrl(url: string) {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function safeHttps(value: string) {
+  const v = value.trim();
+  if (!v) return "";
+
+  if (v.startsWith("//")) return `https:${v}`;
+  if (v.startsWith("http://") || v.startsWith("https://")) return v;
+
+  return `https://${v}`;
+}
+
+function onlyDigits(value: string) {
+  return value.replace(/[^\d]/g, "");
+}
+
+function normalizeTelegram(input: string) {
+  const v = input.trim();
+
+  if (v.startsWith("https://") || v.startsWith("http://")) return v;
+  if (v.startsWith("@")) return `https://t.me/${v.slice(1)}`;
+  if (v.includes("t.me/")) return `https://${v}`;
+
+  return `https://t.me/${v.replace(/^\/+/, "")}`;
+}
+
+function normalizeWhatsApp(input: string) {
+  const v = input.trim();
+
+  if (v.startsWith("https://wa.me/")) return v;
+  if (v.startsWith("http://") || v.startsWith("https://")) return v;
+
+  const digits = onlyDigits(v);
+  if (!digits) return "";
+
+  return `https://wa.me/${digits}`;
+}
+
+function normalizeInstagram(input: string) {
+  const v = input.trim().replace(/^@/, "");
+  if (v.startsWith("http://") || v.startsWith("https://")) return v;
+  return `https://www.instagram.com/${v.replace(/^\/+/, "")}`;
+}
+
+function normalizeLinkedIn(input: string) {
+  const v = input.trim();
+  if (v.startsWith("http://") || v.startsWith("https://")) return v;
+  return `https://www.linkedin.com/in/${v.replace(/^\/+/, "")}`;
+}
+
+function normalizeTwitter(input: string) {
+  const v = input.trim().replace(/^@/, "");
+  if (v.startsWith("http://") || v.startsWith("https://")) return v;
+  return `https://x.com/${v}`;
+}
+
+function normalizeYouTube(input: string) {
+  const v = input.trim();
+  if (v.startsWith("http://") || v.startsWith("https://")) return v;
+  return `https://www.youtube.com/@${v.replace(/^@/, "")}`;
+}
+
+function normalizeFacebook(input: string) {
+  const v = input.trim();
+  if (v.startsWith("http://") || v.startsWith("https://")) return v;
+  return `https://www.facebook.com/${v.replace(/^\/+/, "")}`;
+}
+
+function normalizeSocialLink(link: SocialLink): SocialLink | null {
+  if (!link?.href) return null;
+
+  const key = (link.iconName || "").toLowerCase();
+  let href = link.href.trim();
+
+  switch (key) {
+    case "telegram":
+      href = normalizeTelegram(href);
+      break;
+    case "whatsapp":
+      href = normalizeWhatsApp(href);
+      break;
+    case "instagram":
+      href = normalizeInstagram(href);
+      break;
+    case "linkedin":
+      href = normalizeLinkedIn(href);
+      break;
+    case "twitter":
+    case "x":
+      href = normalizeTwitter(href);
+      break;
+    case "youtube":
+      href = normalizeYouTube(href);
+      break;
+    case "facebook":
+      href = normalizeFacebook(href);
+      break;
+    default:
+      href = safeHttps(href);
+  }
+
+  if (!href || !isValidUrl(href)) return null;
+
+  return {
+    ...link,
+    href,
+  };
 }
 
 // ── Metadata ─────────────────────────────────────────────────────────────────
 
-export async function generateMetadata({ params }: { params: PageParams }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: PageParams;
+}): Promise<Metadata> {
   const { slug, locale: rawLocale } = await params;
   const locale = isLocale(rawLocale) ? rawLocale : "fa";
 
@@ -165,13 +300,16 @@ export async function generateMetadata({ params }: { params: PageParams }): Prom
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
-export default async function DoctorProfilePage({ params }: { params: PageParams }) {
+export default async function DoctorProfilePage({
+  params,
+}: {
+  params: PageParams;
+}) {
   const { slug, locale: rawLocale } = await params;
 
   if (!isLocale(rawLocale)) notFound();
   const locale = rawLocale as Locale;
 
-  // Fetch doctor + full site data in parallel
   const [doctorResult, siteDataResult, aboutHighlightsResult] = await Promise.allSettled([
     getDoctor(slug),
     getSiteData(locale),
@@ -193,11 +331,14 @@ export default async function DoctorProfilePage({ params }: { params: PageParams
   const stats = siteData?.stats ?? [];
   const qualifications = siteData?.qualifications ?? [];
   const achievements = siteData?.achievements ?? [];
-  const contact = siteData?.contact ?? { phoneDisplay: "", phoneLink: "", whatsAppUrl: "", address: "" };
-  const socialLinks = siteData?.socialLinks ?? [];
+  const contact =
+    siteData?.contact ?? { phoneDisplay: "", phoneLink: "", whatsAppUrl: "", address: "" };
+
+  const socialLinks = ((siteData?.socialLinks ?? []) as SocialLink[])
+    .map(normalizeSocialLink)
+    .filter(Boolean) as SocialLink[];
 
   const doctorImage = heroGallery?.doctor || "";
-  const isRtl = locale !== "en";
   const homeHref = locale === "fa" ? "/" : `/${locale}`;
 
   return (
@@ -209,7 +350,6 @@ export default async function DoctorProfilePage({ params }: { params: PageParams
       {/* ── Profile Hero ─────────────────────────────── */}
       <section className="doctor-hero section" id="top">
         <div className="container doctor-hero-layout">
-          {/* Copy */}
           <div className="doctor-hero-copy" data-reveal>
             <Link href={homeHref} className="back-nav">
               <ArrowLeftIcon />
@@ -220,11 +360,8 @@ export default async function DoctorProfilePage({ params }: { params: PageParams
 
             <h1>{localized.fullName || site.brand}</h1>
 
-            <p className="doctor-tagline">
-              {localized.heroCopy || site.heroCopy}
-            </p>
+            <p className="doctor-tagline">{localized.heroCopy || site.heroCopy}</p>
 
-            {/* Stat strip */}
             <div className="doctor-hero-stats">
               {localized.experienceYears && (
                 <div className="doctor-hero-stat">
@@ -234,6 +371,7 @@ export default async function DoctorProfilePage({ params }: { params: PageParams
                   </span>
                 </div>
               )}
+
               {stats.slice(0, 2).map((s: any) => (
                 <div className="doctor-hero-stat" key={s.label}>
                   <strong>
@@ -255,17 +393,11 @@ export default async function DoctorProfilePage({ params }: { params: PageParams
                 {t(copy.bookViaWhatsApp, locale)}
                 <WhatsappIcon />
               </a>
-              <a
-                className="button button-secondary"
-                href={`tel:${contact.phoneLink}`}
-              >
-                {t(copy.directCall, locale)}
-                <PhoneIcon />
-              </a>
+
+           
             </div>
           </div>
 
-          {/* Photo */}
           {doctorImage && (
             <div className="doctor-hero-image" data-reveal>
               <Image
@@ -303,7 +435,6 @@ export default async function DoctorProfilePage({ params }: { params: PageParams
               )}
             </div>
 
-            {/* Highlights */}
             <div className="doctor-highlights-grid" style={{ marginTop: 0 }}>
               {aboutHighlights.map((h: any) => (
                 <article key={h.title} className="doctor-highlight-card glass-card">
@@ -414,7 +545,7 @@ export default async function DoctorProfilePage({ params }: { params: PageParams
             <p>{t(copy.ctaSubtitle, locale)}</p>
             <div className="doctor-cta-actions">
               <a
-                className="button button-white"
+                className="button button-outline-white"
                 href={contact.whatsAppUrl}
                 target="_blank"
                 rel="noreferrer"
@@ -422,13 +553,7 @@ export default async function DoctorProfilePage({ params }: { params: PageParams
                 {t(copy.bookViaWhatsApp, locale)}
                 <WhatsappIcon />
               </a>
-              <a
-                className="button button-outline-white"
-                href={`tel:${contact.phoneLink}`}
-              >
-                {t(copy.directCall, locale)}
-                <PhoneIcon />
-              </a>
+
             </div>
           </div>
         </div>
