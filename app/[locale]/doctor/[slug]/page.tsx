@@ -26,6 +26,7 @@ import { getAboutHighlights } from "../../../../lib/about-highlights";
 import { getLocalizedProfile } from "../../../../lib/profile-fallback";
 import { site as staticSite } from "../../../../lib/site-data";
 import { isLocale, t, type Locale } from "../../../../lib/l10n";
+import { localizeDigits, localizeNumber } from "../../../../lib/localizeNumbers";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -365,7 +366,7 @@ export default async function DoctorProfilePage({
             <div className="doctor-hero-stats">
               {localized.experienceYears && (
                 <div className="doctor-hero-stat">
-                  <strong>{localized.experienceYears}+</strong>
+                  <strong>{localizeNumber(localized.experienceYears, locale)}+</strong>
                   <span>
                     {t(copy.years, locale)} {t(copy.experience, locale)}
                   </span>
@@ -375,7 +376,9 @@ export default async function DoctorProfilePage({
               {stats.slice(0, 2).map((s: any) => (
                 <div className="doctor-hero-stat" key={s.label}>
                   <strong>
-                    {s.value}
+                    {typeof s.value === "number"
+                      ? localizeNumber(s.value, locale)
+                      : localizeDigits(String(s.value ?? ""), locale)}
                     {s.suffix ?? ""}
                   </strong>
                   <span>{s.label}</span>
@@ -483,7 +486,7 @@ export default async function DoctorProfilePage({
             />
             <div className="stats-grid" data-reveal>
               {stats.map((s: any) => (
-                <StatCard key={s.label} {...s} />
+                <StatCard key={s.label} {...s} locale={locale} />
               ))}
             </div>
           </div>
@@ -502,7 +505,7 @@ export default async function DoctorProfilePage({
             <div className="timeline" data-reveal style={{ maxWidth: 720 }}>
               {qualifications.map((q: any) => (
                 <article key={q.title} className="timeline-item">
-                  <span className="timeline-year">{q.year}</span>
+                  <span className="timeline-year">{localizeDigits(String(q.year ?? ""), locale)}</span>
                   <div>
                     <h3>{q.title}</h3>
                     <p>{q.text}</p>

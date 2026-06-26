@@ -24,6 +24,7 @@ import { Footer } from "./footer";
 import { getSiteData } from "../lib/get-site-data";
 import { getAboutHighlights } from "../lib/about-highlights";
 import { t, type Locale } from "../lib/l10n";
+import { localizeDigits, localizeNumber } from "../lib/localizeNumbers";
 import { FaqAccordion } from "./faq-accordion";
 import { getAllArticlesByLocale, getFeaturedArticleByLocale } from "@/lib/articles";
 import TechImageGallery from "@/components/TechImageGallery";
@@ -465,7 +466,9 @@ export async function HomeContent({ locale }: { locale: Locale }) {
               {stats.slice(0, 3).map((item: any) => (
                 <div className="hero-kpi" key={item.label}>
                   <strong>
-                    {item.value}
+                    {typeof item.value === "number"
+                      ? localizeNumber(item.value, locale)
+                      : localizeDigits(String(item.value ?? ""), locale)}
                     {item.suffix ?? ""}
                   </strong>
                   <span>{item.label}</span>
@@ -706,7 +709,7 @@ export async function HomeContent({ locale }: { locale: Locale }) {
           />
           <div className="stats-grid" data-reveal>
             {stats.map((item: any) => (
-              <StatCard key={item.label} {...item} />
+              <StatCard key={item.label} {...item} locale={locale} />
             ))}
           </div>
         </div>
@@ -735,7 +738,7 @@ export async function HomeContent({ locale }: { locale: Locale }) {
             <div className="timeline" data-reveal>
               {qualifications.map((item: any) => (
                 <article key={item.title} className="timeline-item">
-                  <span className="timeline-year">{item.year}</span>
+                  <span className="timeline-year">{localizeDigits(String(item.year ?? ""), locale)}</span>
                   <div>
                     <h3>{item.title}</h3>
                     <p>{item.text}</p>
@@ -814,7 +817,10 @@ export async function HomeContent({ locale }: { locale: Locale }) {
             </div>
             <div className="featured-copy">
               <span className="article-meta">
-                {featuredArticle?.category} • {featuredArticle?.readingMinutes}{" "}
+                {featuredArticle?.category} •{" "}
+                {featuredArticle?.readingMinutes != null
+                  ? localizeNumber(featuredArticle.readingMinutes, locale)
+                  : ""}{" "}
                 {t(pageCopy.studyMinute, locale)}
               </span>
               <h3>{featuredArticle?.title}</h3>
@@ -842,7 +848,10 @@ export async function HomeContent({ locale }: { locale: Locale }) {
                 </div>
                 <div className="article-card-copy">
                   <span className="article-meta">
-                    {item.category} • {item.readingMinutes}{" "}
+                    {item.category} •{" "}
+                    {item.readingMinutes != null
+                      ? localizeNumber(item.readingMinutes, locale)
+                      : ""}{" "}
                     {t(pageCopy.studyMinuteShort, locale)}
                   </span>
                   <h3>{item.title}</h3>

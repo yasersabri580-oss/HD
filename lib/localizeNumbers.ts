@@ -1,134 +1,68 @@
-// utils/localizeNumbers.ts
+// lib/localizeNumbers.ts
+//
+// Render-layer localization utilities.
+//
+// ARCHITECTURE
+// ─────────────────────────────────────────────────────────────────────────────
+// Localization of numbers belongs in the UI layer, NOT in the data layer.
+//
+// • getSiteData() must return clean data with machine types intact:
+//   – numeric fields (stats.value, rating, ids …) stay as JS numbers
+//   – URLs, hrefs, slugs, phone links, image paths stay as strings
+//
+// • These two helpers are called explicitly at render sites only for
+//   human-readable display text.  They are NEVER called on machine values.
+//
+// • The old recursive localizeObjectNumbers/walk approach is intentionally
+//   removed: it converted numeric fields to digit strings, breaking
+//   AnimatedCounter (NaN), and risked corrupting URLs / slugs.
 
-import { Locale } from "../lib/l10n";
+import type { Locale } from "./l10n";
+
+const LOCALE_TAG: Record<Locale, string> = {
+  fa: "fa-IR",
+  ps: "fa-AF",
+  en: "en-US",
+};
 
 const PERSIAN_DIGITS = "۰۱۲۳۴۵۶۷۸۹";
-const PASHTO_DIGITS = "۰۱۲۳۴۵۶۷۸۹";
-const ENGLISH_DIGITS = "0123456789";
+const PASHTO_DIGITS  = "۰۱۲۳۴۵۶۷۸۹";
 
 /**
- * Keys that should NEVER be localized.
- * They contain machine-readable values.
+ * Convert ASCII digit characters inside a human-readable display string to
+ * locale-specific digits.
+ *
+ * Use this ONLY for display strings (qualification years, achievement text,
+ * etc.).  Never use it on URLs, slugs, IDs, phone links or any machine value.
+ *
+ * Examples:
+ *   localizeDigits("2015 - 2018", "fa")  → "۲۰۱۵ - ۲۰۱۸"
+ *   localizeDigits("2015 - 2018", "en")  → "2015 - 2018"
  */
-const PROTECTED_KEYS = new Set([
-  "id",
-  "doctor_id",
-  "sort_order",
-
-  "url",
-  "href",
-  "src",
-  "storage_url",
-  "image",
-  "imageUrl",
-  "thumbnail",
-  "avatar",
-  "icon",
-  "icon_name",
-
-  "slug",
-  "path",
-  "route",
-
-  "filename",
-  "fileName",
-
-  "email",
-  "phone",
-  "phone_link",
-  "phoneLink",
-  "whatsapp",
-  "whatsapp_url",
-  "whatsAppUrl",
-
-  "website",
-
-  "created_at",
-  "updated_at",
-]);
-
-function isProtectedString(value: string): boolean {
-  const v = value.trim();
-
-  return (
-    /^https?:\/\//i.test(v) ||
-    /^ftp:\/\//i.test(v) ||
-    /^file:\/\//i.test(v) ||
-
-    /^mailto:/i.test(v) ||
-    /^tel:/i.test(v) ||
-    /^sms:/i.test(v) ||
-    /^whatsapp:/i.test(v) ||
-
-    v.startsWith("/") ||
-
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ||
-
-    /\.(jpg|jpeg|png|gif|webp|svg|ico|pdf|mp4|mov|avi|zip)$/i.test(v)
-  );
-}
-
-export function localizeDigits(
-  value: string,
-  locale: Locale,
-): string {
-
+export function localizeDigits(value: string, locale: Locale): string {
   if (!value) return value;
 
-  if (isProtectedString(value))
-    return value;
-
   switch (locale) {
-
     case "fa":
-      return value.replace(/\d/g, d => PERSIAN_DIGITS[Number(d)]);
-
+      return value.replace(/\d/g, (d) => PERSIAN_DIGITS[Number(d)]);
     case "ps":
-      return value.replace(/\d/g, d => PASHTO_DIGITS[Number(d)]);
-
+      return value.replace(/\d/g, (d) => PASHTO_DIGITS[Number(d)]);
     case "en":
     default:
-      return value.replace(/[۰-۹]/g, ch =>
-        ENGLISH_DIGITS[PERSIAN_DIGITS.indexOf(ch)]
-      );
+      return value;
   }
 }
 
-export function localizeObjectNumbers<T>(
-  data: T,
-  locale: Locale,
-): T {
-
-  return walk(data, locale) as T;
-}
-
-function walk(value: any, locale: Locale, key?: string): any {
-
-  if (value == null)
-    return value;
-
-  if (key && PROTECTED_KEYS.has(key))
-    return value;
-
-  if (typeof value === "string")
-    return localizeDigits(value, locale);
-
-  if (typeof value === "number")
-    return localizeDigits(value.toString(), locale);
-
-  if (Array.isArray(value))
-    return value.map(item => walk(item, locale));
-
-  if (typeof value === "object") {
-
-    const obj: Record<string, any> = {};
-
-    for (const [k, v] of Object.entries(value)) {
-      obj[k] = walk(v, locale, k);
-    }
-
-    return obj;
-  }
-
-  return value;
+/**
+ * Format a JS number for human-readable display in the given locale.
+ *
+ * Uses Intl.NumberFormat – always call with a real JS number, never a string.
+ *
+ * Examples:
+ *   localizeNumber(8,    "fa")  → "۸"
+ *   localizeNumber(1000, "fa")  → "۱٬۰۰۰"
+ *   localizeNumber(8,    "en")  → "8"
+ */
+export function localizeNumber(value: number, locale: Locale): string {
+  return new Intl.NumberFormat(LOCALE_TAG[locale]).format(value);
 }

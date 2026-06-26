@@ -8,8 +8,9 @@ import { getDoctor, getDoctorById } from '@/lib/doctors'
 import { getLocalizedProfile } from '@/lib/profile-fallback'
 import { site as staticSite } from '@/lib/site-data'
 import { ArrowLeftIcon } from '@/components/icons'
-import { Locale } from '@/lib/l10n'
+import { Locale, t } from '@/lib/l10n'
 import { getSiteData } from '@/lib/get-site-data'
+import { localizeNumber } from '@/lib/localizeNumbers'
 
 type PageParams = Promise<{ slug: string; locale: Locale }>
 
@@ -113,8 +114,12 @@ export default async function ArticlePage({
 
             <div className="article-body">
               <span className="article-meta">
-                {article.category ?? ''} • {article.readingMinutes ?? ''}{' '}
-                {isEn ? 'min read' : 'دقیقه مطالعه'} • {article.publishedAt ?? ''}
+                {article.category ?? ''} •{' '}
+                {article.readingMinutes != null
+                  ? localizeNumber(article.readingMinutes, locale)
+                  : ''}{' '}
+                {t({ fa: 'دقیقه مطالعه', en: 'min read', ps: 'دقیقې لوستل' }, locale)} •{' '}
+                {article.publishedAt ?? ''}
               </span>
 
               <h1>{article.title}</h1>

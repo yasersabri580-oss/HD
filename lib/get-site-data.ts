@@ -15,7 +15,6 @@ import {
   technologyHighlights as staticTechHighlights,
   testimonials as staticTestimonials,
 } from './site-data'
-import { localizeObjectNumbers } from './localizeNumbers'
 
 
 type RawSiteData = {
@@ -284,8 +283,7 @@ export async function getSiteData(locale: Locale) {
     iconName: l.icon_name,
   }))
 
- return localizeObjectNumbers(
-{
+ return {
     site,
     services,
     stats,
@@ -300,7 +298,5 @@ export async function getSiteData(locale: Locale) {
     heroImagesByKey,
     testimonials,
     socialLinks,
-},
-locale
-);
+  };
 }
