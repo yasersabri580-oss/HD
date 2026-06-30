@@ -11,6 +11,7 @@ import { ArrowLeftIcon } from '@/components/icons'
 import { Locale, t } from '@/lib/l10n'
 import { getSiteData } from '@/lib/get-site-data'
 import { localizeNumber } from '@/lib/localizeNumbers'
+import { SITE_URL } from '@/lib/config'
 
 type PageParams = Promise<{ slug: string; locale: Locale }>
 
@@ -35,6 +36,22 @@ export async function generateMetadata({
     return {
       title: article.title ?? 'Article',
       description: article.excerpt ?? '',
+      alternates: {
+        canonical: `${SITE_URL}/${locale}/articles/${slug}`,
+        languages: {
+          fa: `${SITE_URL}/fa/articles/${slug}`,
+          en: `${SITE_URL}/en/articles/${slug}`,
+          ps: `${SITE_URL}/ps/articles/${slug}`,
+          'x-default': `${SITE_URL}/fa/articles/${slug}`,
+        },
+      },
+      openGraph: {
+        title: article.title ?? 'Article',
+        description: article.excerpt ?? '',
+        type: 'article',
+        url: `${SITE_URL}/${locale}/articles/${slug}`,
+        images: typeof article.cover === 'string' ? [{ url: article.cover }] : [],
+      },
     }
   } catch {
     return {
@@ -95,7 +112,60 @@ export default async function ArticlePage({
       ? article.cover
       : article.cover?.src || "https://qtryyswmdsfmukgrxuaq.supabase.co/storage/v1/object/public/article-covers/b58a98b2-5eec-42ea-84a8-3706df8666cf/heart-health-foundation.jpg"
 
+  const doctorProfile = doctor ? (doctor?.doctor_profile ?? doctor) : null
+  const authorLocalized = doctorProfile
+    ? getLocalizedProfile(doctorProfile, locale, staticSite)
+    : null
+
   const isEn = locale === 'en'
+
+  const articleJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: article.title ?? '',
+    description: article.excerpt ?? '',
+    image: coverSrc,
+    datePublished: article.publishedAt ?? '',
+    author: authorLocalized
+      ? {
+          '@type': 'Person',
+          name: authorLocalized.fullName,
+          url: `${SITE_URL}/${locale}/doctor/${article.authorSlug || 'mohibullah-ahmadzai'}`,
+        }
+      : undefined,
+    publisher: authorLocalized
+      ? { '@type': 'Person', name: authorLocalized.fullName }
+      : undefined,
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': `${SITE_URL}/${locale}/articles/${slug}`,
+    },
+  }
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: isEn ? 'Home' : 'صفحه اصلی',
+        item: `${SITE_URL}/${locale}`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: isEn ? 'Articles' : 'مقالات',
+        item: `${SITE_URL}/${locale}/articles`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: article.title ?? '',
+        item: `${SITE_URL}/${locale}/articles/${slug}`,
+      },
+    ],
+  }
 
   return (
     <main className="article-page">
@@ -168,7 +238,7 @@ export default async function ArticlePage({
                 </div>
               )}
 
-              <Link href="/" className="inline-link">
+              <Link href={`/${locale}`} className="inline-link">
                 {isEn ? 'Back to Home' : 'برگشت به صفحه اصلی'}
                 <ArrowLeftIcon />
               </Link>
@@ -194,6 +264,15 @@ export default async function ArticlePage({
           </aside>
         </div>
       </section>
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
     </main>
   )
 }
