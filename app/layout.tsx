@@ -17,6 +17,7 @@ import { RevealObserver } from '../components/reveal'
 import { LanguageProvider } from '../components/language-provider'
 import { LanguagePreferenceSync } from '../components/language-preference-sync'
 import { getCookieLocale, getDir, LANGUAGE_COOKIE_KEY } from '../lib/l10n'
+import { SITE_URL } from '../lib/config'
 
 const vazir = Vazirmatn({
   subsets: ['arabic', 'latin'],
@@ -25,6 +26,7 @@ const vazir = Vazirmatn({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: 'داکتر محب الله احمدزی | متخصص داخله قلب، آنژیوگرافی و آنژیوپلاستی',
     template: '%s | داکتر محب الله احمدزی',

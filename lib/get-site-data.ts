@@ -86,26 +86,7 @@ async function fetchRawSiteData(): Promise<RawSiteData> {
 };
 
   const articles = unwrap(articlesData, [] as any[]).filter((a: any) => a.is_published)
-// after const articles = unwrap(...) ...
-console.log('🔍 heroImagesData raw promise result:');
-const heroImagesPromise = heroImagesData; // 0‑based: hero_images is the 12th query
-console.log('  status:', heroImagesPromise.status);
-if (heroImagesPromise.status === 'fulfilled') {
-  const val = heroImagesPromise.value;
-  console.log('  value:', JSON.stringify(val, null, 2));
-  if (val?.data) {
-    console.log('  data length:', (val.data as any[]).length);
-    console.log('  data items:', JSON.stringify(val.data, null, 2));
-  }
-  if (val?.error) console.log('  error:', val.error);
-} else {
-  console.log('  reason:', heroImagesPromise.reason);
-}
-
-// then proceed with unwrap
-const heroImages = unwrap(heroImagesData, []) as any[];
-console.log('📦 heroImages after unwrap count:', heroImages.length);
-console.log('📦 heroImages after unwrap:', JSON.stringify(heroImages, null, 2));
+  const heroImages = unwrap(heroImagesData, []) as any[];
   return {
     profile: unwrap(profile, null),
     services: unwrap(servicesData, []) as any[],
@@ -125,7 +106,7 @@ console.log('📦 heroImages after unwrap:', JSON.stringify(heroImages, null, 2)
 }
 
 const getRawSiteData = unstable_cache(fetchRawSiteData, ['doctor-site-data'], {
-  revalidate: 5 , // 1 day
+  revalidate: 86400, // 1 day
 })
 
 function pickSpecific(jsonb: any, lang: Locale): string {
@@ -213,19 +194,9 @@ export async function getSiteData(locale: Locale) {
       }
     : staticContact
 
-  // ----- DEBUG: raw hero images -----
-  console.log('🖼️ raw.heroImages count:', raw.heroImages.length);
-  console.log('🖼️ raw.heroImages:', JSON.stringify(raw.heroImages, null, 2));
-
   // Group images by key, storing url + localised alt
   const heroImagesByKey = raw.heroImages
-    .filter((i: any) => {
-      const active = i.is_active ?? true;
-      if (!active) {
-        console.log(`⛔ filtered out (inactive): key=${i.key_name}, id=${i.id}, storage_url=${i.storage_url}`);
-      }
-      return active;
-    })
+    .filter((i: any) => i.is_active ?? true)
     .reduce<Record<string, { url: string; alt: string }[]>>((acc, img) => {
       const key = img.key_name;
       if (!acc[key]) acc[key] = [];
@@ -235,15 +206,6 @@ export async function getSiteData(locale: Locale) {
       });
       return acc;
     }, {});
-
-  // ----- DEBUG: grouped result -----
-  console.log('📦 heroImagesByKey keys:', Object.keys(heroImagesByKey));
-  Object.entries(heroImagesByKey).forEach(([key, arr]) => {
-    console.log(`📦 ${key}: count=${arr.length}`);
-  });
-  if (heroImagesByKey.lab) {
-    console.log('📦 heroImagesByKey.lab content:', JSON.stringify(heroImagesByKey.lab, null, 2));
-  }
 
   // Single-image object (keeps backward compatibility)
   const heroGallery = {
@@ -260,11 +222,6 @@ export async function getSiteData(locale: Locale) {
     appointment: heroImagesByKey.appointment?.[0]?.url || staticHeroGallery.appointment,
     seminar: heroImagesByKey.seminar?.[0]?.url || staticHeroGallery.seminar,
   };
-
-  // ----- DEBUG: final heroGallery -----
-  console.log('🖼️ heroGallery.lab:', heroGallery.lab);
-  console.log('🖼️ staticHeroGallery.lab:', staticHeroGallery.lab);
-
 
   const testimonials = raw.reviews.map((t: any) => ({
     name: t?.patient_name || t?.name || t?.full_name || '',
