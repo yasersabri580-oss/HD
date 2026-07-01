@@ -1,12 +1,16 @@
 import type { Metadata } from 'next'
-import { cookies } from "next/headers";
-import { getCookieLocale, LANGUAGE_COOKIE_KEY } from "../lib/l10n";
-import { HomeContent } from "../components/home-content";
-import { SITE_URL } from "../lib/config";
+import { cookies, headers } from 'next/headers'
+import { redirect } from 'next/navigation'
+import { detectRequestLocale, LANGUAGE_COOKIE_KEY } from '../lib/l10n'
+import { SITE_URL } from '../lib/config'
 
 export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: true,
+  },
   alternates: {
-    canonical: SITE_URL,
+    canonical: `${SITE_URL}/fa`,
     languages: {
       fa: `${SITE_URL}/fa`,
       en: `${SITE_URL}/en`,
@@ -17,7 +21,11 @@ export const metadata: Metadata = {
 }
 
 export default async function HomePage() {
-  const cookieStore = await cookies();
-  const locale = getCookieLocale(cookieStore.get(LANGUAGE_COOKIE_KEY)?.value);
-  return <HomeContent locale={locale} />;
+  const cookieStore = await cookies()
+  const headerStore = await headers()
+  const locale = detectRequestLocale(
+    cookieStore.get(LANGUAGE_COOKIE_KEY)?.value,
+    headerStore.get('accept-language'),
+  )
+  redirect(`/${locale}`)
 }
