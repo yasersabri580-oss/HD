@@ -183,19 +183,33 @@ const fetchPublishedArticlesFromSupabase = unstable_cache(
   async () => {
     const { data, error } = await supabase
       .from("articles")
-      .select(
-        "slug,title,title_fa,title_en,title_ps,excerpt,excerpt_fa,excerpt_en,excerpt_ps,category,category_fa,category_en,category_ps,reading_minutes,published_at,cover_url,content,author_id,author_slug,doctor_id,doctor_slug,is_featured,is_published"
-      )
+      .select(`
+        slug,
+        title,
+        excerpt,
+        category,
+        reading_minutes,
+        published_at,
+        cover_url,
+        content,
+      
+        doctor_id,
+     
+        is_featured,
+        is_published
+      `)
       .eq("is_published", true)
       .order("published_at", { ascending: false });
 
     if (error) throw error;
+
     return data ?? [];
   },
   ["published-articles"],
-  { revalidate: 3600 }
+  {
+    revalidate: 3600,
+  }
 );
-
 function parseArticleContent(rawContent: any, locale: string): string[] {
   if (
     rawContent &&
