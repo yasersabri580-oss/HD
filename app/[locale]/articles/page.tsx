@@ -73,7 +73,7 @@ export default async function ArticlesArchivePage({
                 <div className="article-card-copy">
                   <span className="article-meta">
                     {item.category} • {item.readingMinutes}{' '}
-                    {locale === 'en' ? 'min read' : 'دقیقه'} • {item.publishedAt}
+                    {locale === 'en' ? 'min read' : locale === 'ps' ? 'دقیقې' : 'دقیقه'} • {item.publishedAt}
                   </span>
                   <h3>{item.title}</h3>
                   <p>{item.excerpt}</p>

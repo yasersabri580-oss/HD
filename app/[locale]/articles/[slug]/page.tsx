@@ -119,6 +119,12 @@ export default async function ArticlePage({
 
   const isEn = locale === 'en'
 
+  const HOME_LABEL = { fa: 'صفحه اصلی', en: 'Home', ps: 'کور پاڼه' } as const
+  const ARTICLES_LABEL = { fa: 'مقالات', en: 'Articles', ps: 'مقالې' } as const
+  const BACK_HOME_LABEL = { fa: 'برگشت به صفحه اصلی', en: 'Back to Home', ps: 'کور پاڼې ته ستنیدل' } as const
+  const RELATED_LABEL = { fa: 'مقالات مرتبط', en: 'Related Articles', ps: 'اړوند مقالې' } as const
+  const READ_LABEL = { fa: 'مطالعه', en: 'Read', ps: 'ولوله' } as const
+
   const articleJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Article',
@@ -134,7 +140,7 @@ export default async function ArticlePage({
         }
       : undefined,
     publisher: authorLocalized
-      ? { '@type': 'Person', name: authorLocalized.fullName }
+      ? { '@type': 'Organization', name: authorLocalized.fullName }
       : undefined,
     mainEntityOfPage: {
       '@type': 'WebPage',
@@ -149,13 +155,13 @@ export default async function ArticlePage({
       {
         '@type': 'ListItem',
         position: 1,
-        name: isEn ? 'Home' : 'صفحه اصلی',
+        name: HOME_LABEL[locale],
         item: `${SITE_URL}/${locale}`,
       },
       {
         '@type': 'ListItem',
         position: 2,
-        name: isEn ? 'Articles' : 'مقالات',
+        name: ARTICLES_LABEL[locale],
         item: `${SITE_URL}/${locale}/articles`,
       },
       {
@@ -239,14 +245,14 @@ export default async function ArticlePage({
               )}
 
               <Link href={`/${locale}`} className="inline-link">
-                {isEn ? 'Back to Home' : 'برگشت به صفحه اصلی'}
+                {BACK_HOME_LABEL[locale]}
                 <ArrowLeftIcon />
               </Link>
             </div>
           </article>
 
           <aside className="article-related">
-            <h2>{isEn ? 'Related Articles' : 'مقالات مرتبط'}</h2>
+            <h2>{RELATED_LABEL[locale]}</h2>
 
             <div className="related-list">
               {related.map((item: any) => (
@@ -255,7 +261,7 @@ export default async function ArticlePage({
                   <p>{item.excerpt}</p>
 
                   <Link href={`/${locale}/articles/${item.slug}`} className="inline-link">
-                    {isEn ? 'Read' : 'مطالعه'}
+                    {READ_LABEL[locale]}
                     <ArrowLeftIcon />
                   </Link>
                 </article>
