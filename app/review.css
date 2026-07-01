@@ -1,42 +1,161 @@
+/* =========================================
+   EMBLA
+========================================= */
 
-/* ----- Tablet (≤1120px) – two columns (already handled in your global CSS, 
-       but we reinforce it here for clarity) ----- */
-@media (max-width: 1120px) {
-  .testimonials-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+.embla {
+  width: 100%;
 }
 
-/* ----- Mobile (≤760px) – stack to single column ----- */
-@media (max-width: 760px) {
-  .testimonials-grid {
-    grid-template-columns: 1fr;
-    gap: 14px;              /* keep consistent spacing */
-  }
-
-  /* Optional: slightly reduce padding so cards don't feel too tight */
-  .testimonial-card {
-    padding: 16px;
-  }
+.embla__viewport {
+  overflow: hidden;
+  width: 100%;
 }
 
-/* ----- Very small phones (≤480px) – ensure no overflow ----- */
-@media (max-width: 480px) {
-  .testimonials-grid {
-    gap: 12px;
+.embla__container {
+  display: flex;
+  align-items: stretch;
+}
+
+.embla__slide {
+  flex: 0 0 33.333%;
+  min-width: 0;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+/* =========================================
+   CARD
+========================================= */
+
+.testimonial-card {
+  height: 100%;
+
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  padding: 22px;
+
+  border-radius: 18px;
+
+  background: var(--surface);
+
+  border: 1px solid rgba(255,255,255,.08);
+
+  transition:
+      transform .25s ease,
+      box-shadow .25s ease,
+      border-color .25s ease;
+}
+
+.testimonial-card:hover {
+
+  transform: translateY(-6px);
+
+  border-color: #6366f1;
+
+  box-shadow:
+      0 18px 45px rgba(0,0,0,.15);
+
+}
+
+.testimonial-header {
+
+  display:flex;
+
+  align-items:center;
+
+  gap:14px;
+
+}
+
+.testimonial-mark {
+
+  width:48px;
+  height:48px;
+
+  border-radius:50%;
+
+  display:flex;
+  justify-content:center;
+  align-items:center;
+
+  color:white;
+
+  font-weight:bold;
+
+  background:linear-gradient(135deg,#6366f1,#8b5cf6);
+
+}
+
+.testimonial-title h3 {
+
+  margin:0;
+
+}
+
+.testimonial-title span {
+
+  opacity:.7;
+
+}
+
+.stars {
+
+  display:flex;
+
+  gap:4px;
+
+  margin:12px 0;
+
+}
+
+/* =========================================
+   TABLET
+========================================= */
+
+@media (max-width:1024px){
+
+  .embla__slide{
+
+      flex:0 0 50%;
+
   }
 
-  .testimonial-card {
-    padding: 14px;
+}
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width:768px){
+
+  .embla__slide{
+
+      flex:0 0 85%;
+
   }
 
-  .testimonial-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
+}
+
+/* =========================================
+   SMALL MOBILE
+========================================= */
+
+@media (max-width:480px){
+
+  .embla__slide{
+
+      flex:0 0 92%;
+
+      padding:8px;
+
   }
 
-  .stars {
-    margin-left: 0;        /* reset any left margin from RTL */
+  .testimonial-card{
+
+      padding:18px;
+
   }
+
 }

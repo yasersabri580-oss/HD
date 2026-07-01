@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'            // ← new import
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import {
@@ -15,7 +16,7 @@ import { useLocale } from '../components/language-provider'
 import { LanguageSwitch } from '../components/language-switch'
 import { siteMeta } from '../lib/site-meta'
 
-// ---- Types ----
+// ---- Types (unchanged) ----
 interface QuickLink {
   href: string
   label_fa?: string
@@ -38,7 +39,7 @@ interface FooterProps {
   socialLinks?: SocialLink[]
 }
 
-// ---- Icon resolver ----
+// ---- Icon resolver (unchanged) ----
 const socialIconMap: Record<string, ReactNode> = {
   facebook: <FacebookIcon />,
   twitter: <TwitterIcon />,
@@ -55,7 +56,7 @@ function SocialIcon({ name }: { name: string }) {
   return socialIconMap[key] ?? <WhatsAppIcon />
 }
 
-// ---- Localisation helpers ----
+// ---- Localisation helpers (unchanged) ----
 function pickLabel(link: QuickLink, locale: string) {
   if (locale === 'en') return link.label_en || link.label_fa || ''
   if (locale === 'ps') return link.label_ps || link.label_fa || ''
@@ -75,7 +76,7 @@ function pickText(fa?: string, en?: string, ps?: string, locale?: string) {
   return fa || en || ps || ''
 }
 
-// ---- Social link normalization ----
+// ---- Social link normalization (unchanged) ----
 function isExternalUrl(value: string) {
   return /^https?:\/\//i.test(value) || /^mailto:/i.test(value) || /^tel:/i.test(value)
 }
@@ -94,38 +95,19 @@ function onlyDigits(value: string) {
 
 function normalizeTelegram(raw: string) {
   const value = raw.trim()
-
-  // already valid
   if (/^https?:\/\/(t\.me|telegram\.me)\//i.test(value)) return value
-
-  // @username
-  if (value.startsWith('@')) {
-    return `https://t.me/${value.slice(1)}`
-  }
-
-  // t.me/username or telegram.me/username
-  if (/^(t\.me|telegram\.me)\//i.test(value)) {
-    return `https://${value}`
-  }
-
-  // plain username
+  if (value.startsWith('@')) return `https://t.me/${value.slice(1)}`
+  if (/^(t\.me|telegram\.me)\//i.test(value)) return `https://${value}`
   return `https://t.me/${value.replace(/^\/+/, '')}`
 }
 
 function normalizeWhatsApp(raw: string) {
   const value = raw.trim()
-
-  // already valid
   if (/^https?:\/\/(wa\.me|api\.whatsapp\.com)\//i.test(value)) return value
-
-  // wa.me/989...
   if (value.startsWith('wa.me/')) return `https://${value}`
   if (value.startsWith('api.whatsapp.com/')) return `https://${value}`
-
-  // phone, +phone, whatsapp:phone, etc.
   const phone = onlyDigits(value)
   if (phone) return `https://wa.me/${phone}`
-
   return ''
 }
 
@@ -167,9 +149,7 @@ function normalizeTwitter(raw: string) {
 function normalizeSocialHref(link: SocialLink) {
   const href = link.href?.trim()
   if (!href) return ''
-
   const key = link.iconName.replace(/icon$/i, '').trim().toLowerCase()
-
   if (key === 'telegram') return normalizeTelegram(href)
   if (key === 'whatsapp') return normalizeWhatsApp(href)
   if (key === 'instagram') return normalizeInstagram(href)
@@ -177,11 +157,10 @@ function normalizeSocialHref(link: SocialLink) {
   if (key === 'youtube') return normalizeYouTube(href)
   if (key === 'facebook') return normalizeFacebook(href)
   if (key === 'twitter' || key === 'x') return normalizeTwitter(href)
-
   return safeHttps(href)
 }
 
-// ---- Footer ----
+// ---- Footer (updated with logo) ----
 export function Footer({
   site,
   footerCopy,
@@ -218,6 +197,16 @@ export function Footer({
     <footer className="footer">
       <div className="container footer-grid">
         <div>
+          {/* 👇 Doctor logo (keeps design intact) */}
+          <div className="footer-logo">
+            <Image
+              src="/icon.png"
+              alt="Doctor logo"
+              width={48}
+              height={48}
+              className="footer-logo-img"
+            />
+          </div>
           <strong>{brand}</strong>
           {subline && <small>{subline}</small>}
           <p>{copy}</p>

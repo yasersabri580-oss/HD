@@ -1,5 +1,5 @@
 /* =============================================
-   Footer — Mobile‑first responsive
+   Footer – Mobile‑first responsive
    ============================================= */
 
 .footer {
@@ -26,7 +26,7 @@ html.dark .footer {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 28px;                 /* comfortable spacing between sections */
+  gap: 28px;
 }
 
 /* Brand / copy block */
@@ -51,6 +51,18 @@ html.dark .footer {
   color: var(--muted);
 }
 
+/* ---------- Doctor logo ---------- */
+.footer-logo {
+  margin-bottom: 12px;        /* space between logo and brand name */
+}
+
+.footer-logo-img {
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--line);
+  background: #fff;           /* subtle background for transparent logos */
+}
+
 /* ----- Quick links (and LanguageSwitch) ----- */
 .footer-links {
   display: flex;
@@ -69,9 +81,8 @@ html.dark .footer {
   color: var(--blue-deep);
 }
 
-/* LanguageSwitch inside the links row – keep it aligned */
 .footer-links .lang-switch {
-  margin: 0;               /* no extra margins */
+  margin: 0;
 }
 
 /* ----- Social icons ----- */
@@ -80,7 +91,7 @@ html.dark .footer {
   gap: 14px;
   align-items: center;
   justify-content: center;
-  margin-top: 0;            /* reset if needed */
+  margin-top: 0;
 }
 
 .social-icon-link {
@@ -119,7 +130,7 @@ html.dark .footer {
   }
 
   .footer-grid > div:first-child {
-    align-items: flex-start;
+    align-items: flex-start;      /* logo + brand left aligned */
   }
 
   .footer-links {

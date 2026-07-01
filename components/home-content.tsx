@@ -28,6 +28,7 @@ import { localizeDigits, localizeNumber } from "../lib/localizeNumbers";
 import { FaqAccordion } from "./faq-accordion";
 import { getAllArticlesByLocale, getFeaturedArticleByLocale } from "@/lib/articles";
 import TechImageGallery from "@/components/TechImageGallery";
+import { Testimonials } from "./Testimonials";
 
 // Slug used for the doctor profile deep-link. Any value works because getDoctor()
 // queries by NEXT_PUBLIC_DOCTOR_ID, not by slug.
@@ -871,20 +872,20 @@ export async function HomeContent({ locale }: { locale: Locale }) {
       </section>
 
       {/* Reviews – dynamic */}
-      <section className="section" id="testimonials">
-        <div className="container">
-          <SectionHeading
-            eyebrow={t(pageCopy.testimonialsEyebrow, locale)}
-            title={t(pageCopy.testimonialsTitle, locale)}
-            subtitle={t(pageCopy.testimonialsSubtitle, locale)}
-          />
-          <div className="testimonials-grid" data-reveal>
-            {testimonials.map((item: any) => (
-              <TestimonialCard key={item.name} {...item} />
-            ))}
-          </div>
-        </div>
-      </section>
+<section className="section" id="testimonials">
+  <div className="container">
+    <SectionHeading
+      eyebrow={t(pageCopy.testimonialsEyebrow, locale)}
+      title={t(pageCopy.testimonialsTitle, locale)}
+      subtitle={t(pageCopy.testimonialsSubtitle, locale)}
+    />
+
+    <Testimonials
+      testimonials={testimonials}
+      direction={(locale === "fa" || locale==="ps" ) ? "rtl" : "ltr"}
+    />
+  </div>
+</section>
 
       {/* Appointment */}
       <section className="section section-soft" id="appointment">
