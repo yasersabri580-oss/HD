@@ -33,6 +33,13 @@ import { SITE_URL } from "../../../../lib/config";
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 type PageParams = Promise<{ locale: string; slug: string }>;
+const LOCALES: Locale[] = ["fa", "en", "ps"];
+const DEFAULT_DOCTOR_SLUG =
+  process.env.NEXT_PUBLIC_DOCTOR_SLUG || "mohibullah-ahmadzai";
+
+export function generateStaticParams() {
+  return LOCALES.map((locale) => ({ locale, slug: DEFAULT_DOCTOR_SLUG }));
+}
 
 type SocialLink = {
   label: string;

@@ -6,6 +6,7 @@ import { ArrowLeftIcon } from '@/components/icons';
 import { Locale } from '@/lib/l10n';
 import { getAllArticlesByLocale } from '@/lib/articles';
 import { SITE_URL } from '@/lib/config';
+import { getSiteData } from '@/lib/get-site-data';
 
 const ARCHIVE_TITLE: Record<Locale, string> = {
   en: 'Heart Health Articles Archive',
@@ -19,12 +20,47 @@ const ARCHIVE_DESC: Record<Locale, string> = {
   fa: 'تحلیل‌های آموزشی و کاربردی برای تصمیم‌گیری بهتر در مسیر مراقبت قلبی — به زبان ساده برای هر مریض.',
 }
 
+const LOCALES: Locale[] = ['fa', 'en', 'ps'];
+
+export function generateStaticParams() {
+  return LOCALES.map((locale) => ({ locale }));
+}
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
   const { locale } = await params;
+  try {
+    const { site } = await getSiteData(locale);
+    const title = `${site.brand} | ${ARCHIVE_TITLE[locale] ?? ARCHIVE_TITLE.fa}`;
+    const description =
+      site.mission || site.heroCopy || ARCHIVE_DESC[locale] || ARCHIVE_DESC.fa;
+
+    return {
+      title,
+      description,
+      alternates: {
+        canonical: `${SITE_URL}/${locale}/articles`,
+        languages: {
+          fa: `${SITE_URL}/fa/articles`,
+          en: `${SITE_URL}/en/articles`,
+          ps: `${SITE_URL}/ps/articles`,
+          'x-default': `${SITE_URL}/fa/articles`,
+        },
+      },
+      openGraph: {
+        title,
+        description,
+        type: 'website',
+        url: `${SITE_URL}/${locale}/articles`,
+      },
+    };
+  } catch {
+    // fallback below
+  }
+
   return {
     title: ARCHIVE_TITLE[locale] ?? ARCHIVE_TITLE.fa,
     description: ARCHIVE_DESC[locale] ?? ARCHIVE_DESC.fa,
@@ -46,7 +82,7 @@ export default async function ArticlesArchivePage({
   params: Promise<{ locale: Locale }>;   // ← params is now a Promise
 }) {
   const { locale } = await params;       // ← await it
-  const articles = await getAllArticlesByLocale(locale);
+  const articles = await getAllArticlesByLocale(locale, 50);
 
   return (
     <main className="article-archive">

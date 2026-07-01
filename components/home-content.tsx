@@ -26,7 +26,7 @@ import { getAboutHighlights } from "../lib/about-highlights";
 import { t, type Locale } from "../lib/l10n";
 import { localizeDigits, localizeNumber } from "../lib/localizeNumbers";
 import { FaqAccordion } from "./faq-accordion";
-import { getAllArticlesByLocale, getFeaturedArticleByLocale } from "@/lib/articles";
+import { getAllArticlesByLocale, getFeaturedArticleByLocaleAsync } from "@/lib/articles";
 import TechImageGallery from "@/components/TechImageGallery";
 
 // Slug used for the doctor profile deep-link. Any value works because getDoctor()
@@ -403,8 +403,9 @@ export async function HomeContent({ locale }: { locale: Locale }) {
 
   const aboutHighlights = await getAboutHighlights({ locale });
 
-  const articles = getAllArticlesByLocale(locale);
-  const featuredArticle = getFeaturedArticleByLocale(locale);
+  const articles = await getAllArticlesByLocale(locale);
+  const featuredArticle = await getFeaturedArticleByLocaleAsync(locale);
+  const primaryFeaturedArticle = featuredArticle ?? articles[0];
 
   const servicesWithIcons = services.map((s: any) => ({
     icon: getServiceIcon(s.iconName || s.icon),
@@ -808,8 +809,8 @@ export async function HomeContent({ locale }: { locale: Locale }) {
           <div className="featured-article glass-card" data-reveal>
             <div className="featured-media">
               <Image
-                src={featuredArticle?.cover || ""}
-                alt={featuredArticle?.title || ""}
+                src={primaryFeaturedArticle?.cover || heroGallery.hero}
+                alt={primaryFeaturedArticle?.title || site.brand}
                 fill
                 sizes="(max-width: 1024px) 100vw, 42vw"
                 className="media-image"
@@ -817,16 +818,20 @@ export async function HomeContent({ locale }: { locale: Locale }) {
             </div>
             <div className="featured-copy">
               <span className="article-meta">
-                {featuredArticle?.category} •{" "}
-                {featuredArticle?.readingMinutes != null
-                  ? localizeNumber(featuredArticle.readingMinutes, locale)
+                {primaryFeaturedArticle?.category} •{" "}
+                {primaryFeaturedArticle?.readingMinutes != null
+                  ? localizeNumber(primaryFeaturedArticle.readingMinutes, locale)
                   : ""}{" "}
                 {t(pageCopy.studyMinute, locale)}
               </span>
-              <h3>{featuredArticle?.title}</h3>
-              <p>{featuredArticle?.excerpt}</p>
+              <h3>{primaryFeaturedArticle?.title}</h3>
+              <p>{primaryFeaturedArticle?.excerpt}</p>
               <Link
-                href={`/${locale}/articles/${featuredArticle?.slug}`}
+                href={
+                  primaryFeaturedArticle?.slug
+                    ? `/${locale}/articles/${primaryFeaturedArticle.slug}`
+                    : `/${locale}/articles`
+                }
                 className="inline-link"
               >
                 {t(pageCopy.studyArticle, locale)}
@@ -835,7 +840,9 @@ export async function HomeContent({ locale }: { locale: Locale }) {
             </div>
           </div>
           <div className="articles-grid" data-reveal>
-            {articles.slice(1).map((item: any) => (
+            {articles
+              .filter((item: any) => item.slug !== primaryFeaturedArticle?.slug)
+              .map((item: any) => (
               <article key={item.slug} className="article-card glass-card">
                 <div className="article-card-media">
                   <Image
