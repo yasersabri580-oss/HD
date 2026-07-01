@@ -1,22 +1,88 @@
+import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@/components/icons';
 // your existing data loader
 import { Locale } from '@/lib/l10n';
 import { getAllArticlesByLocale } from '@/lib/articles';
+import { SITE_URL } from '@/lib/config';
+import { getSiteData } from '@/lib/get-site-data';
 
+const ARCHIVE_TITLE: Record<Locale, string> = {
+  en: 'Heart Health Articles Archive',
+  ps: 'د زړه روغتیا مقالو آرشیف',
+  fa: 'آرشیو مقالات سلامت قلب',
+}
+
+const ARCHIVE_DESC: Record<Locale, string> = {
+  en: 'Educational and practical analyses for better heart care decisions – in simple language for every patient.',
+  ps: 'د زړه روغتیا پاملرنې د غوره پریکړو لپاره تعلیمي او عملي تحلیلونه – د هر ناروغ لپاره په ساده ژبه',
+  fa: 'تحلیل‌های آموزشی و کاربردی برای تصمیم‌گیری بهتر در مسیر مراقبت قلبی — به زبان ساده برای هر مریض.',
+}
+
+const LOCALES: Locale[] = ['fa', 'en', 'ps'];
+
+export function generateStaticParams() {
+  return LOCALES.map((locale) => ({ locale }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: Locale }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  try {
+    const { site } = await getSiteData(locale);
+    const title = `${site.brand} | ${ARCHIVE_TITLE[locale] ?? ARCHIVE_TITLE.fa}`;
+    const description =
+      site.mission || site.heroCopy || ARCHIVE_DESC[locale] || ARCHIVE_DESC.fa;
+
+    return {
+      title,
+      description,
+      alternates: {
+        canonical: `${SITE_URL}/${locale}/articles`,
+        languages: {
+          fa: `${SITE_URL}/fa/articles`,
+          en: `${SITE_URL}/en/articles`,
+          ps: `${SITE_URL}/ps/articles`,
+          'x-default': `${SITE_URL}/fa/articles`,
+        },
+      },
+      openGraph: {
+        title,
+        description,
+        type: 'website',
+        url: `${SITE_URL}/${locale}/articles`,
+      },
+    };
+  } catch {
+    // fallback below
+  }
+
+  return {
+    title: ARCHIVE_TITLE[locale] ?? ARCHIVE_TITLE.fa,
+    description: ARCHIVE_DESC[locale] ?? ARCHIVE_DESC.fa,
+    alternates: {
+      canonical: `${SITE_URL}/${locale}/articles`,
+      languages: {
+        fa: `${SITE_URL}/fa/articles`,
+        en: `${SITE_URL}/en/articles`,
+        ps: `${SITE_URL}/ps/articles`,
+        'x-default': `${SITE_URL}/fa/articles`,
+      },
+    },
+  };
+}
 
 export default async function ArticlesArchivePage({
   params,
 }: {
   params: Promise<{ locale: Locale }>;   // ← params is now a Promise
 }) {
-  
- 
-console.log("params", params)
   const { locale } = await params;       // ← await it
-console.log("local is", locale)
-  const articles = await getAllArticlesByLocale(locale);
+  const articles = await getAllArticlesByLocale(locale, 50);
 
   return (
     <main className="article-archive">
@@ -24,20 +90,8 @@ console.log("local is", locale)
         <div className="container">
           <div className="archive-head" data-reveal>
             <span className="hero-tag">Medical Publication</span>
-         <h1>
-  {locale === 'en'
-    ? 'Heart Health Articles Archive'
-    : locale === 'ps'
-    ? 'د زړه روغتیا مقالو آرشیف'         
-    : 'آرشیو مقالات سلامت قلب'}
-</h1>
-<p>
-  {locale === 'en'
-    ? 'Educational and practical analyses for better heart care decisions – in simple language for every patient.'
-    : locale === 'ps'
-    ? 'د زړه روغتیا پاملرنې د غوره پریکړو لپاره تعلیمي او عملي تحلیلونه – د هر ناروغ لپاره په ساده ژبه'
-    : 'تحلیل‌های آموزشی و کاربردی برای تصمیم‌گیری بهتر در مسیر مراقبت قلبی — به زبان ساده برای هر مریض.'}
-</p>
+         <h1>{ARCHIVE_TITLE[locale]}</h1>
+<p>{ARCHIVE_DESC[locale]}</p>
           </div>
 
           <div className="articles-grid" data-reveal>
@@ -55,22 +109,19 @@ console.log("local is", locale)
                 <div className="article-card-copy">
                   <span className="article-meta">
                     {item.category} • {item.readingMinutes}{' '}
-                    {locale === 'en' ? 'min read' : 'دقیقه'} • {item.publishedAt}
+                    {locale === 'en' ? 'min read' : locale === 'ps' ? 'دقیقې' : 'دقیقه'} • {item.publishedAt}
                   </span>
                   <h3>{item.title}</h3>
                   <p>{item.excerpt}</p>
                   <Link
-                    href={`${locale}/articles/${item.slug}`}
+                    href={`/${locale}/articles/${item.slug}`}
                     className="inline-link"
                   >
-<Link href={`/${locale}/articles/${item.slug}`} className="inline-link">
-  {locale === 'en'
-    ? 'Read Article'
-    : locale === 'ps'
-    ? 'لیکنه ولوله'
-    : 'مطالعه مقاله'}
-  <ArrowLeftIcon />
-</Link>
+                    {locale === 'en'
+                      ? 'Read Article'
+                      : locale === 'ps'
+                      ? 'لیکنه ولوله'
+                      : 'مطالعه مقاله'}
                     <ArrowLeftIcon />
                   </Link>
                 </div>

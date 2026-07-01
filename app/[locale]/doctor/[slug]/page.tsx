@@ -25,12 +25,21 @@ import { getSiteData } from "../../../../lib/get-site-data";
 import { getAboutHighlights } from "../../../../lib/about-highlights";
 import { getLocalizedProfile } from "../../../../lib/profile-fallback";
 import { site as staticSite } from "../../../../lib/site-data";
+import { siteMeta } from "../../../../lib/site-meta";
 import { isLocale, t, type Locale } from "../../../../lib/l10n";
 import { localizeDigits, localizeNumber } from "../../../../lib/localizeNumbers";
+import { SITE_URL } from "../../../../lib/config";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 type PageParams = Promise<{ locale: string; slug: string }>;
+const LOCALES: Locale[] = ["fa", "en", "ps"];
+const DEFAULT_DOCTOR_SLUG =
+  process.env.NEXT_PUBLIC_DOCTOR_SLUG || "mohibullah-ahmadzai";
+
+export function generateStaticParams() {
+  return LOCALES.map((locale) => ({ locale, slug: DEFAULT_DOCTOR_SLUG }));
+}
 
 type SocialLink = {
   label: string;
@@ -288,10 +297,20 @@ export async function generateMetadata({
     return {
       title: localized.seoTitle || localized.fullName || "Doctor",
       description: localized.seoDescription || localized.heroCopy || "",
+      alternates: {
+        canonical: `${SITE_URL}/${locale}/doctor/${slug}`,
+        languages: {
+          fa: `${SITE_URL}/fa/doctor/${slug}`,
+          en: `${SITE_URL}/en/doctor/${slug}`,
+          ps: `${SITE_URL}/ps/doctor/${slug}`,
+          'x-default': `${SITE_URL}/fa/doctor/${slug}`,
+        },
+      },
       openGraph: {
         title: localized.ogTitle || localized.fullName || "Doctor",
         description: localized.seoDescription || "",
         type: "profile",
+        url: `${SITE_URL}/${locale}/doctor/${slug}`,
       },
     };
   } catch {
@@ -340,7 +359,7 @@ export default async function DoctorProfilePage({
     .filter(Boolean) as SocialLink[];
 
   const doctorImage = heroGallery?.doctor || "";
-  const homeHref = locale === "fa" ? "/" : `/${locale}`;
+  const homeHref = `/${locale}`;
 
   return (
     <main className="site-shell">
@@ -578,10 +597,17 @@ export default async function DoctorProfilePage({
             name: localized.fullName || site.brand,
             description: localized.seoDescription || "",
             medicalSpecialty: ["Cardiology", "Interventional Cardiology"],
-            url: `https://drmohibullah.com/${locale}/doctor/${slug}`,
+            url: `${SITE_URL}/${locale}/doctor/${slug}`,
             telephone: contact.phoneDisplay,
-            address: contact.address,
-            image: doctorImage,
+            address: siteMeta.addresses.map((a) => ({
+              "@type": "PostalAddress",
+              name: a.name_en,
+              streetAddress: a.address_en,
+              addressLocality: "Kabul",
+              addressCountry: "AF",
+            })),
+            image: doctorImage || undefined,
+            sameAs: socialLinks.map((l) => l.href).filter(Boolean),
           }),
         }}
       />

@@ -1,5 +1,8 @@
 import { supabase } from './supabase'
 
+// Resolved from env at module load time; used by both query functions below.
+const doctorId = process.env.NEXT_PUBLIC_DOCTOR_ID
+
 export async function getDoctor(slug: string) {
   // The backend guide uses a single-row doctor_profile table. Keep the old slug-based
   // interface for the existing pages, but resolve the single doctor profile from DB.
@@ -17,13 +20,11 @@ export async function getDoctor(slug: string) {
     doctor_profile: data,
   }
 }
-// load from env doctor id 
-const doctorId = process.env.NEXT_PUBLIC_DOCTOR_ID
 
-export async function getDoctorById(id: string | number) {
-  const numericId = Number(id)
-  if (!Number.isFinite(numericId) || numericId <= 0) return null
-
+export async function getDoctorById(_id: string | number) {
+  // The profile table is keyed by the env-var UUID (doctorId), not by the caller's id.
+  // The numeric guard that was here previously rejected UUID strings (Number(uuid) = NaN),
+  // silently returning null on article pages. It is removed.
   const { data, error } = await supabase
     .from('doctor_profile')
     .select('*')
