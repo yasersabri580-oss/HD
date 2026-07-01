@@ -1,4 +1,5 @@
 import type { StaticImageData } from "next/image";
+import { unstable_cache } from "next/cache";
 import hero from "../assets/images/hero.png";
 import consultation from "../assets/images/Consultation Scene.png";
 import ecg from "../assets/images/ECGMonitor Room.png";
@@ -44,6 +45,8 @@ type LocalizedArticle = {
   authorSlug?: string;
   isFeatured?: boolean;
 };
+
+const DEFAULT_ARTICLE_LIMIT = 50;
 // ---------- Static multilingual articles ----------
 const localizedArticles: LocalizedArticle[] = [
   // ... (your existing article "early-signs-of-chest-pain" stays here) ...
@@ -172,8 +175,117 @@ export function getFeaturedArticleByLocale(locale: string): Article | undefined 
 
 
 // ---------- Helper functions ---------- get all articles by local pass
-export function getAllArticlesByLocale(locale: string): Article[] {
+export function getAllArticlesByLocaleStatic(locale: string): Article[] {
   return localizedArticles.map((a) => resolveArticle(a, locale));
+}
+
+const fetchPublishedArticlesFromSupabase = unstable_cache(
+  async () => {
+    const { data, error } = await supabase
+      .from("articles")
+      .select(
+        "slug,title,title_fa,title_en,title_ps,excerpt,excerpt_fa,excerpt_en,excerpt_ps,category,category_fa,category_en,category_ps,reading_minutes,published_at,cover_url,content,author_id,author_slug,doctor_id,doctor_slug,is_featured,is_published"
+      )
+      .eq("is_published", true)
+      .order("published_at", { ascending: false });
+
+    if (error) throw error;
+    return data ?? [];
+  },
+  ["published-articles"],
+  { revalidate: 3600 }
+);
+
+function parseArticleContent(rawContent: any, locale: string): string[] {
+  if (
+    rawContent &&
+    typeof rawContent === "object" &&
+    !Array.isArray(rawContent)
+  ) {
+    const contentStr =
+      rawContent[locale] || rawContent["fa"] || rawContent["en"] || "";
+    return String(contentStr)
+      .split("\n\n")
+      .map((p: string) => p.trim())
+      .filter(Boolean);
+  }
+
+  if (Array.isArray(rawContent) && rawContent.length > 0) {
+    return rawContent;
+  }
+
+  if (typeof rawContent === "string" && rawContent.trim()) {
+    return [rawContent];
+  }
+
+  return [];
+}
+
+function mapSupabaseArticle(data: any, locale: string): Article {
+  return {
+    slug: data.slug,
+    title: pickLocalized(data, "title", locale) || data.title || "",
+    excerpt: pickLocalized(data, "excerpt", locale) || data.excerpt || "",
+    category: pickLocalized(data, "category", locale) || data.category || "",
+    readingMinutes: data.reading_minutes || data.readingMinutes || 0,
+    publishedAt: data.published_at || data.publishedAt || "",
+    cover: data.cover_url || "",
+    content: parseArticleContent(data.content, locale),
+    authorId: data.author_id || data.doctor_id || 1,
+    authorSlug: data.author_slug || data.doctor_slug || "doctor",
+  };
+}
+
+export async function getAllArticlesByLocale(
+  localePref: string,
+  limit = DEFAULT_ARTICLE_LIMIT
+): Promise<Article[]> {
+  const locale = resolveLocale(localePref);
+
+  try {
+    const data = await fetchPublishedArticlesFromSupabase();
+    if (data.length > 0) {
+      return data.slice(0, limit).map((item: any) => mapSupabaseArticle(item, locale));
+    }
+  } catch (err) {
+    console.error("Failed to fetch article list from Supabase:", err);
+  }
+
+  return localizedArticles
+    .slice(0, limit)
+    .map((a) => resolveArticle(a, locale));
+}
+
+export async function getFeaturedArticleByLocaleAsync(
+  localePref: string
+): Promise<Article | undefined> {
+  const locale = resolveLocale(localePref);
+  try {
+    const data = await fetchPublishedArticlesFromSupabase();
+    const featured = data.find((a: any) => a.is_featured);
+    if (featured) return mapSupabaseArticle(featured, locale);
+    if (data.length > 0) return mapSupabaseArticle(data[0], locale);
+  } catch (err) {
+    console.error("Failed to fetch featured article from Supabase:", err);
+  }
+  return getFeaturedArticleByLocale(locale) ?? getAllArticlesByLocaleStatic(locale)[0];
+}
+
+export async function getArticleSlugs(limit = DEFAULT_ARTICLE_LIMIT): Promise<string[]> {
+  try {
+    const data = await fetchPublishedArticlesFromSupabase();
+    const slugs = data
+      .map((item: any) => item.slug)
+      .filter(Boolean)
+      .slice(0, limit);
+    if (slugs.length > 0) return slugs;
+  } catch (err) {
+    console.error("Failed to fetch article slugs from Supabase:", err);
+  }
+  return getAllArticlesByLocaleStatic("fa")
+    .map((a) => a.slug)
+    .filter(Boolean)
+    .slice(0, limit);
 }
 
 // ---------- Dynamic fetch helpers ----------
@@ -196,32 +308,7 @@ export async function fetchArticleBySlug(
       const excerpt =
         pickLocalized(data, "excerpt", locale) || data.excerpt || "";
 
-      let content: string[] = [];
-
-      // Multilingual object: { en, fa, ps }
-      if (
-        data.content &&
-        typeof data.content === "object" &&
-        !Array.isArray(data.content)
-      ) {
-        const contentStr =
-          data.content[locale] ||
-          data.content["fa"] ||
-          data.content["en"] ||
-          "";
-        content = contentStr
-          .split("\n\n")
-          .map((p: string) => p.trim())
-          .filter(Boolean);
-      }
-      // Direct array (old format)
-      else if (Array.isArray(data.content) && data.content.length > 0) {
-        content = data.content;
-      }
-      // Plain string
-      else if (typeof data.content === "string" && data.content.trim()) {
-        content = [data.content];
-      }
+      const content = parseArticleContent(data.content, locale);
 
       return {
         slug: data.slug,
@@ -253,11 +340,7 @@ export async function fetchRelatedArticles(
   const locale = resolveLocale(localePref);
 
   try {
-    const { data } = await supabase
-      .from("articles")
-      .select("*")
-      .eq("is_published", true)
-      .order("published_at", { ascending: false });
+    const data = await fetchPublishedArticlesFromSupabase();
 
     if (data && data.length > 0) {
       return data

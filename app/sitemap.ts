@@ -1,7 +1,6 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "../lib/config";
-import { getAllArticlesByLocale } from "../lib/articles";
-import { supabase } from "../lib/supabase";
+import { getArticleSlugs } from "../lib/articles";
 
 const LOCALES = ["fa", "en", "ps"] as const;
 const DOCTOR_SLUG =
@@ -42,25 +41,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
   }
 
-  // Fetch article slugs from Supabase; fall back to static if unavailable.
-  let articleSlugs: string[] = [];
-  try {
-    const { data } = await supabase
-      .from("articles")
-      .select("slug")
-      .eq("is_published", true);
-    if (data && data.length > 0) {
-      articleSlugs = (data as { slug: string }[])
-        .map((a) => a.slug)
-        .filter(Boolean);
-    }
-  } catch {
-    // Supabase unavailable at build time — proceed with static fallback below.
-  }
-
-  if (articleSlugs.length === 0) {
-    articleSlugs = getAllArticlesByLocale("fa").map((a) => a.slug);
-  }
+  const articleSlugs = await getArticleSlugs(50);
 
   // Individual article pages
   for (const slug of articleSlugs) {

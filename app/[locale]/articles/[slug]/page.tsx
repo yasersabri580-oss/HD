@@ -2,8 +2,7 @@ import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import fallbackArticle from "../../../assets/images/heart-health-foundation.jpg";
-import { fetchArticleBySlug, fetchRelatedArticles } from '@/lib/articles'
+import { fetchArticleBySlug, fetchRelatedArticles, getArticleSlugs } from '@/lib/articles'
 import { getDoctor, getDoctorById } from '@/lib/doctors'
 import { getLocalizedProfile } from '@/lib/profile-fallback'
 import { site as staticSite } from '@/lib/site-data'
@@ -14,6 +13,14 @@ import { localizeNumber } from '@/lib/localizeNumbers'
 import { SITE_URL } from '@/lib/config'
 
 type PageParams = Promise<{ slug: string; locale: Locale }>
+const LOCALES: Locale[] = ['fa', 'en', 'ps']
+
+export const revalidate = 3600
+
+export async function generateStaticParams() {
+  const slugs = await getArticleSlugs(50)
+  return LOCALES.flatMap((locale) => slugs.map((slug) => ({ locale, slug })))
+}
 
 /* ---------------- Metadata ---------------- */
 
