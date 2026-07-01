@@ -359,7 +359,7 @@ export default async function DoctorProfilePage({
     .filter(Boolean) as SocialLink[];
 
   const doctorImage = heroGallery?.doctor || "";
-  const homeHref = locale === "fa" ? "/" : `/${locale}`;
+  const homeHref = `/${locale}`;
 
   return (
     <main className="site-shell">

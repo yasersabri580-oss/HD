@@ -1,4 +1,5 @@
 export type Locale = 'fa' | 'en' | 'ps'
+export const LOCALES: Locale[] = ['fa', 'en', 'ps']
 
 export const DEFAULT_LOCALE: Locale = 'fa'
 export const LANGUAGE_COOKIE_KEY = 'site_language'
@@ -53,13 +54,8 @@ export function buildLocalizedHref(
 
   // Build new pathname
   let newPath: string
-  if (locale === DEFAULT_LOCALE) {
-    newPath = segments.join('/') || '/'
-  } else {
-    // Insert locale after the first empty segment
-    segments.splice(1, 0, locale)
-    newPath = segments.join('/')
-  }
+  segments.splice(1, 0, locale)
+  newPath = segments.join('/')
 
   // Ensure leading slash
   if (!newPath.startsWith('/')) newPath = '/' + newPath
@@ -70,6 +66,33 @@ export function buildLocalizedHref(
   }
 
   return newPath
+}
+
+function fromLanguageTag(value: string): Locale | null {
+  const tag = value.trim().toLowerCase()
+  if (!tag) return null
+  if (tag.startsWith('fa') || tag.startsWith('prs')) return 'fa'
+  if (tag.startsWith('en')) return 'en'
+  if (tag.startsWith('ps')) return 'ps'
+  return null
+}
+
+export function getLocaleFromAcceptLanguage(headerValue?: string | null): Locale {
+  if (!headerValue) return DEFAULT_LOCALE
+  const candidates = headerValue.split(',').map((part) => part.split(';')[0]?.trim() || '')
+  for (const candidate of candidates) {
+    const locale = fromLanguageTag(candidate)
+    if (locale) return locale
+  }
+  return DEFAULT_LOCALE
+}
+
+export function detectRequestLocale(
+  cookieValue?: string | null,
+  acceptLanguageHeader?: string | null,
+): Locale {
+  if (isLocale(cookieValue)) return cookieValue
+  return getLocaleFromAcceptLanguage(acceptLanguageHeader)
 }
 export function getLocaleFromPathname(pathname: string): Locale | null {
   // Remove a trailing slash if present

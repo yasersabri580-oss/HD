@@ -233,7 +233,7 @@ export default async function ArticlePage({
                         </div>
 
                         <div>
-                          <Link href="/" className="inline-link">
+                          <Link href={`/${locale}`} className="inline-link">
                             <strong>{localized?.fullName}</strong>
                           </Link>
 
